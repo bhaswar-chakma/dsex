@@ -1,0 +1,25 @@
+name: Update DSE data
+
+on:
+  schedule:
+    - cron: "0 10 * * 0-4"   # 10:00 UTC (16:00 Dhaka), Sun–Thu, after market close
+  workflow_dispatch:          # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - run: uv run python tidydse.py
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/dse_day_end.parquet
+          git diff --cached --quiet || git commit -m "Update DSE data $(date -u +%F)"
+          git push
